@@ -4,13 +4,10 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "airtribune2task",
+	"name": "tmg2task",
 	"main": ".svelte-kit/cloudflare/_worker.js",
 	"compatibility_date": "2026-04-02",
-	"compatibility_flags": [
-		"nodejs_compat",
-		"nodejs_als"
-	],
+	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"

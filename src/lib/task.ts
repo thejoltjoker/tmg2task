@@ -2,6 +2,8 @@ export const TROFEO_AIRTRIBUNE_URL = 'https://api.airtribune.com/feed_task.json'
 export const TROFEO_FLYMASTER_FALLBACK_URL = 'https://lt.flymaster.net/json/kml/45511.json';
 export const TROFEO_FLYMASTER_GROUP_URL = 'https://lt.flymaster.net/bs.php?grp=7428#';
 
+export type DataSource = 'auto' | 'airtribune' | 'flymaster';
+
 export type TaskTag = 'd' | 's' | 't' | 'e' | 'g';
 
 export interface NormalizedTurnpoint {
@@ -160,7 +162,30 @@ const resolveFlymasterTaskUrl = async (fetchFn: typeof fetch): Promise<string> =
 	return TROFEO_FLYMASTER_FALLBACK_URL;
 };
 
-export const fetchCurrentTask = async (fetchFn: typeof fetch): Promise<NormalizedTask> => {
+export const fetchAirtribuneTask = async (fetchFn: typeof fetch): Promise<NormalizedTask> => {
+	const ts = Math.floor(Date.now() / 1000);
+	const response = await fetchFn(`${TROFEO_AIRTRIBUNE_URL}?ts=${ts}`);
+	if (!response.ok) throw new Error(`Airtribune returned ${response.status}`);
+	const data = (await response.json()) as AirtribuneTaskResponse;
+	return normalizeAirtribuneTask(data);
+};
+
+export const fetchFlymasterTask = async (fetchFn: typeof fetch): Promise<NormalizedTask> => {
+	const url = await resolveFlymasterTaskUrl(fetchFn);
+	const response = await fetchFn(url);
+	if (!response.ok) throw new Error(`Flymaster returned ${response.status}`);
+	const data = (await response.json()) as FlymasterTaskResponse;
+	return normalizeFlymasterTask(data);
+};
+
+export const fetchCurrentTask = async (
+	fetchFn: typeof fetch,
+	source: DataSource = 'auto'
+): Promise<NormalizedTask> => {
+	if (source === 'airtribune') return fetchAirtribuneTask(fetchFn);
+	if (source === 'flymaster') return fetchFlymasterTask(fetchFn);
+
+	// auto: try Airtribune first, fall back to Flymaster
 	const ts = Math.floor(Date.now() / 1000);
 	const primary = await fetchFn(`${TROFEO_AIRTRIBUNE_URL}?ts=${ts}`);
 	if (primary.ok) {

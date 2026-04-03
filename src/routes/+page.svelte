@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Tabs } from 'bits-ui';
 	import {
 		CircleLayer,
@@ -54,6 +55,11 @@
 	const mapGeojson = $derived(data.mapGeojson ?? { type: 'FeatureCollection', features: [] });
 
 	let qrTab = $state('full-task');
+
+	function handleSourceChange(event: Event) {
+		const source = (event.currentTarget as HTMLSelectElement).value;
+		goto(`?source=${source}`, { invalidateAll: true });
+	}
 </script>
 
 <svelte:head>
@@ -61,7 +67,21 @@
 </svelte:head>
 
 <main class="mx-auto max-w-6xl space-y-6 p-4">
-	<h1 class="text-3xl font-bold">Trofeo Montegrappa - Current Task</h1>
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<h1 class="text-3xl font-bold">Trofeo Montegrappa - Current Task</h1>
+		<label class="flex items-center gap-2 text-sm text-slate-700">
+			Data source
+			<select
+				class="rounded border border-slate-300 px-2 py-1"
+				value={data.source}
+				onchange={handleSourceChange}
+			>
+				<option value="auto">Auto</option>
+				<option value="airtribune">Airtribune</option>
+				<option value="flymaster">Flymaster</option>
+			</select>
+		</label>
+	</div>
 
 	{#if data.error}
 		<p class="rounded border border-red-300 bg-red-50 p-4 text-red-800">{data.error}</p>

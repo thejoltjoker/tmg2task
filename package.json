@@ -52,5 +52,8 @@
 	"dependencies": {
 		"bits-ui": "^2.16.5",
 		"qrcode": "^1.5.4"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": ["esbuild"]
 	}
 }

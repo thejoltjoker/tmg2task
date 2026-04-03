@@ -56,9 +56,8 @@
 
 	let qrTab = $state('full-task');
 
-	function handleSourceChange(event: Event) {
-		const source = (event.currentTarget as HTMLSelectElement).value;
-		goto(`?source=${source}`, { invalidateAll: true });
+	function handleSourceChange(event: Event & { currentTarget: HTMLSelectElement }) {
+		goto(`?source=${event.currentTarget.value}`, { invalidateAll: true });
 	}
 </script>
 

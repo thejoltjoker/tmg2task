@@ -105,7 +105,7 @@ describe('fetchFlymasterTask', () => {
 		expect(task.turnpoints[2].tag).toBe('e');
 	});
 
-	it('uses the URL discovered from the group page when available', async () => {
+	it('uses the URL discovered from the group page when available (absolute URL)', async () => {
 		const discoveredUrl = 'https://lt.flymaster.net/json/kml/99999.json';
 		const mockFetch = makeMockFetch({
 			'bs.php': {
@@ -117,6 +117,43 @@ describe('fetchFlymasterTask', () => {
 		await fetchFlymasterTask(mockFetch);
 		const calls = (mockFetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as string);
 		expect(calls.some((u) => u.includes('99999'))).toBe(true);
+	});
+
+	it('uses the URL discovered from the group page when available (root-relative URL)', async () => {
+		const mockFetch = makeMockFetch({
+			'bs.php': {
+				ok: true,
+				text: async () => `<a href="/json/kml/88888.json">task</a>`
+			},
+			'json/kml': { ok: true, json: async () => mockFlymasterResponse }
+		});
+		await fetchFlymasterTask(mockFetch);
+		const calls = (mockFetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as string);
+		expect(calls.some((u) => u.includes('88888'))).toBe(true);
+	});
+
+	it('uses the URL discovered from the group page when available (relative URL without leading slash)', async () => {
+		const mockFetch = makeMockFetch({
+			'bs.php': {
+				ok: true,
+				text: async () => `var taskUrl = "json/kml/77777.json";`
+			},
+			'json/kml': { ok: true, json: async () => mockFlymasterResponse }
+		});
+		await fetchFlymasterTask(mockFetch);
+		const calls = (mockFetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as string);
+		expect(calls.some((u) => u.includes('77777'))).toBe(true);
+	});
+
+	it('includes a cache-busting timestamp in the group page request', async () => {
+		const mockFetch = makeMockFetch({
+			'bs.php': { ok: false },
+			'json/kml': { ok: true, json: async () => mockFlymasterResponse }
+		});
+		await fetchFlymasterTask(mockFetch);
+		const calls = (mockFetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0] as string);
+		const groupCall = calls.find((u) => u.includes('bs.php'));
+		expect(groupCall).toMatch(/&_=\d+/);
 	});
 
 	it('throws when flymaster returns a non-ok response', async () => {

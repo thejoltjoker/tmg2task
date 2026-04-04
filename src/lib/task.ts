@@ -1,6 +1,6 @@
 export const TROFEO_AIRTRIBUNE_URL = 'https://api.airtribune.com/feed_task.json';
 export const TROFEO_FLYMASTER_FALLBACK_URL = 'https://lt.flymaster.net/json/kml/45511.json';
-export const TROFEO_FLYMASTER_GROUP_URL = 'https://lt.flymaster.net/bs.php?grp=7428#';
+export const TROFEO_FLYMASTER_GROUP_URL = 'https://lt.flymaster.net/bs.php?grp=7428';
 
 export type DataSource = 'auto' | 'airtribune' | 'flymaster';
 
@@ -146,15 +146,19 @@ const normalizeFlymasterTask = (input: FlymasterTaskResponse): NormalizedTask =>
 
 const resolveFlymasterTaskUrl = async (fetchFn: typeof fetch): Promise<string> => {
 	try {
-		const response = await fetchFn(TROFEO_FLYMASTER_GROUP_URL);
+		const ts = Math.floor(Date.now() / 1000);
+		const response = await fetchFn(`${TROFEO_FLYMASTER_GROUP_URL}&_=${ts}`);
 		if (!response.ok) return TROFEO_FLYMASTER_FALLBACK_URL;
 
 		const html = await response.text();
 		const match = html.match(/https?:\/\/lt\.flymaster\.net\/json\/kml\/\d+\.json/i);
 		if (match?.[0]) return match[0];
 
-		const relativeMatch = html.match(/\/json\/kml\/\d+\.json/i);
-		if (relativeMatch?.[0]) return `https://lt.flymaster.net${relativeMatch[0]}`;
+		const relativeMatch = html.match(/\/?json\/kml\/(\d+)\.json/i);
+		if (relativeMatch?.[0]) {
+			const path = relativeMatch[0].startsWith('/') ? relativeMatch[0] : `/${relativeMatch[0]}`;
+			return `https://lt.flymaster.net${path}`;
+		}
 	} catch {
 		// Keep fallback behavior when group page is unavailable.
 	}

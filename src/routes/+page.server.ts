@@ -1,5 +1,11 @@
 import type { PageServerLoad } from './$types';
-import { buildOptimalRouteCoordinates, buildXcTaskPayload, fetchCurrentTask, xctskFilename } from '$lib/task';
+import {
+	buildOptimalRouteCoordinates,
+	buildXcTaskPayload,
+	fetchCurrentTask,
+	xctskFilename,
+	type DataSource
+} from '$lib/task';
 import { toInlineXcTaskQrText, toQrDataUrl } from '$lib/qr';
 
 const EARTH_RADIUS_METERS = 6371008.8;
@@ -35,8 +41,11 @@ const turnpointCircleCoordinates = (
 };
 
 export const load: PageServerLoad = async ({ fetch, url }) => {
+	const rawSource = url.searchParams.get('source') ?? 'auto';
+	const source: DataSource =
+		rawSource === 'airtribune' || rawSource === 'flymaster' ? rawSource : 'auto';
 	try {
-		const task = await fetchCurrentTask(fetch);
+		const task = await fetchCurrentTask(fetch, source);
 		const xctskPayload = buildXcTaskPayload(task);
 		const xctskJson = JSON.stringify(xctskPayload);
 		const downloadUrl = `${url.origin}/download.xctsk`;
@@ -88,6 +97,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 			downloadUrl,
 			inlineQrDataUrl,
 			urlQrDataUrl,
+			source,
 			error: null
 		};
 	} catch (error) {
@@ -98,6 +108,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 			downloadUrl: null,
 			inlineQrDataUrl: null,
 			urlQrDataUrl: null,
+			source,
 			error: error instanceof Error ? error.message : 'Unknown error loading task'
 		};
 	}
